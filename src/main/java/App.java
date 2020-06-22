@@ -15,6 +15,92 @@ public class App {
     public String bestCharge(List<String> inputs) {
         //TODO: write code here
 
-        return null;
+        //菜单
+        List<Item> items = itemRepository.findAll();
+        //促销方式
+        List<SalesPromotion> salesPromotions = salesPromotionRepository.findAll();
+        //可以半价的菜品的代号
+        List<String> halfDish= salesPromotions.get(1).getRelatedItems();
+        String[][] strs= new String[inputs.size()][5];//菜品的代号、数量、名称、是否可以半价、单价
+        String[] str = null;
+        //将输入分割成菜的代号以及菜的数量
+        for(int i=0; i< inputs.size(); i++){
+            str = inputs.get(i).split(" x ");
+
+            strs[i][0] = str[0];
+            Item item = null;
+            for(int j = 0; j < items.size(); j++){
+
+                if(items.get(j).getId().equals(strs[i][0])){
+                    item = items.get(j);
+                    break;
+                }
+            }
+            strs[i][1] = str[1];
+            strs[i][2] = item.getName();
+            strs[i][3] = String.valueOf(halfDish.contains(str[0]));
+            strs[i][4] = String.valueOf(item.getPrice());
+        }
+        //原价
+        double total = 0 ;
+
+        //第一种优惠方案
+        double totalFirst = 0;
+        for(int i = 0 ; i < inputs.size(); i++){
+            total+= Integer.parseInt(strs[i][1]) *  Double.parseDouble(strs[i][4]);
+        }
+        if(total > 30){
+            totalFirst = total -6;
+        }
+
+        //第二种优惠方案
+        double totalSecond = 0;
+        for(int i = 0 ; i < inputs.size(); i++){
+            if(strs[i][3].equals("true")) {
+
+                totalSecond += (Integer.parseInt(strs[i][1]) * Double.parseDouble(strs[i][4]))/2;
+            }else {
+                totalSecond += Integer.parseInt(strs[i][1]) * Double.parseDouble(strs[i][4]);
+            }
+        }
+
+        //返回值
+        String returnStr = "============= Order details =============\n";
+        if(total<30&&total==totalSecond){
+            //没有没有优惠
+            for(int i= 0 ; i< inputs.size(); i++){
+                returnStr += strs[i][2]+" x "+Integer.parseInt(strs[i][1])+" = "+Integer.parseInt(strs[i][1]) * (int) Double.parseDouble(strs[i][4])+" yuan\n";
+            }
+            returnStr+="-----------------------------------\n" +
+                    "Total："+(int)total+" yuan\n" +
+                    "===================================";
+        }
+        else if(totalFirst < totalSecond){
+            //使用第一种优惠方案
+            for(int i= 0 ; i< inputs.size(); i++){
+                returnStr += strs[i][2]+" x "+Integer.parseInt(strs[i][1])+" = "+Integer.parseInt(strs[i][1]) * (int) Double.parseDouble(strs[i][4])+" yuan\n";
+            }
+            returnStr+="-----------------------------------\n" +
+                    "Promotion used:\n" +
+                    "满30减6 yuan，saving 6 yuan\n" +
+                    "-----------------------------------\n" +
+                    "Total："+(int)totalFirst+" yuan\n" +
+                    "===================================";
+
+        }else {
+            //使用第二种优惠方案
+            for(int i= 0 ; i< inputs.size(); i++){
+                returnStr += strs[i][2]+" x "+Integer.parseInt(strs[i][1])+" = "+Integer.parseInt(strs[i][1]) * (int) Double.parseDouble(strs[i][4])+" yuan\n";
+            }
+            returnStr+="-----------------------------------\n" +
+                    "Promotion used:\n" +
+                    "Half price for certain dishes (Braised chicken，Cold noodles)，saving "+(int)(total-totalSecond)+" yuan\n" +
+                    "-----------------------------------\n" +
+                    "Total："+(int)totalSecond+" yuan\n" +
+                    "===================================";
+
+        }
+
+        return  returnStr;
     }
 }
